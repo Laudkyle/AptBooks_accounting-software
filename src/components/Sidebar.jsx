@@ -433,7 +433,7 @@ const Sidebar = ({ isExpanded, companyName }) => {
         }`}
       >
         <img
-          src={"images/logo.png"}
+          src={"images/logo-apt.png"}
           alt="Essential Anchor"
           className={`w-12 h-12 ${isExpanded ? "mr-3" : "mb-2"}`}
         />
