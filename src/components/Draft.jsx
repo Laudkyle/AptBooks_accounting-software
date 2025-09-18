@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import API from "../api.js";
 import { FaEye, FaEdit, FaTrashAlt, FaMoneyBillWave } from "react-icons/fa";
-import { useCart } from "../CartContext.jsx";
+import { useCart } from "../CartContext";
 import { toast } from "react-toastify";
 import Invoice from "./Invoice";
 import { jsPDF } from "jspdf";
