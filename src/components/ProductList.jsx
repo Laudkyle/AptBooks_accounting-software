@@ -26,6 +26,9 @@ const ProductList = () => {
   const [productToDelete, setProductToDelete] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: "", direction: "" });
   const [imagePreview, setImagePreview] = useState(null);
+    const UPLOAD_KEY = import.meta.env.VITE_UPLOAD_KEY;
+const CDN_URL = import.meta.env.VITE_CDN_URL;
+
   // Fetch products from the backend
 
   const fetchProducts =()=>{ API
@@ -57,24 +60,23 @@ const ProductList = () => {
         )
     );
   }, [filterText, products]);
-  // Handle image file change
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        // Set image preview
-        setImagePreview(reader.result);
-        // Update selected product with image
-        setSelectedProduct((prev) => ({
-          ...prev,
-          image: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-  
+const handleImageChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result); // preview still uses base64
+    };
+    reader.readAsDataURL(file);
+
+    // Keep the File itself for upload
+    setSelectedProduct((prev) => ({
+      ...prev,
+      image: file,
+    }));
+  }
+};
+
   // Define columns for the data table
   const columns = [
     {
@@ -84,7 +86,7 @@ const ProductList = () => {
           <img
             src={row.image}
             alt={row.name}
-            className="w-16 h-16 object-cover rounded-lg"
+            className="w-16 h-16 object-fill rounded-lg"
           />
         ) : (
           <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-lg">
@@ -165,61 +167,70 @@ const ProductList = () => {
         toast.error("Error deleting the product.");
       });
   };
-  // Modified handleUpdate to include image
-  const handleUpdate = () => {
+
+
+// Modified handleUpdate to upload to CDN first (using env vars)
+const handleUpdate = async () => {
+  try {
     const { id, name, cp, sp, stock, image } = selectedProduct;
+    let imageUrl = null;
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("cp", cp);
-    formData.append("sp", sp);
-    formData.append("stock", stock);
+    // --- Step 1: Upload image to CDN if available ---
+    if (image) {
+      const uploadData = new FormData();
 
-    // If image is a File or Blob, append it. If it's a base64 string, convert to blob
-    if (image instanceof File || image instanceof Blob) {
-      formData.append("image", image);
-    } else if (image && image.startsWith("data:")) {
-      // Convert base64 to blob
-      const blob = dataURItoBlob(image);
-      formData.append("image", blob, "product-image.jpg");
-    }
+      if (image instanceof File || image instanceof Blob) {
+        uploadData.append("image", image);
+      } else {
+        // base64 string goes directly
+        uploadData.append("image", image);
+      }
 
-    API
-      .put(`/products/${id}`, formData, {
+      const uploadRes = await fetch(`${CDN_URL}/upload`, {
+        method: "POST",
         headers: {
-          "Content-Type": "multipart/form-data",
+          "x-upload-key": UPLOAD_KEY, // secure upload key
         },
-      })
-      .then((response) => {
-        const updatedProduct = response.data;
-        setProducts(
-          products.map((product) =>
-            product.id === updatedProduct.id ? updatedProduct : product
-          )
-        );
-        toast.success("Product updated successfully!");
-        setIsEditing(false);
-        setSelectedProduct(null);
-        setImagePreview(null);
-        fetchProducts()
-      })
-      .catch((error) => {
-        console.error("There was an error updating the product:", error);
-        toast.error("Error updating the product.");
-      })
-  };
+        body: uploadData,
+      });
 
-  // Utility function to convert data URI to Blob
-  const dataURItoBlob = (dataURI) => {
-    const byteString = atob(dataURI.split(",")[1]);
-    const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+      if (!uploadRes.ok) {
+        throw new Error("CDN upload failed");
+      }
+
+      const uploadJson = await uploadRes.json();
+      imageUrl = uploadJson.secureUrl; // use secure URL returned from CDN
     }
-    return new Blob([ab], { type: mimeString });
-  };
+
+    // --- Step 2: Update product with CDN URL ---
+    const payload = {
+      name,
+      cp,
+      sp,
+      stock,
+      image: imageUrl || null,
+    };
+
+    const response = await API.put(`/products/${id}`, payload);
+
+    const updatedProduct = response.data;
+    setProducts(
+      products.map((product) =>
+        product.id === updatedProduct.id ? updatedProduct : product
+      )
+    );
+    toast.success("Product updated successfully!");
+    setIsEditing(false);
+    setSelectedProduct(null);
+    setImagePreview(null);
+    fetchProducts();
+  } catch (error) {
+    console.error("There was an error updating the product:", error);
+    toast.error("Error updating the product.");
+  }
+};
+
+
 
   // Handle change in input fields (for editing)
   const handleChange = (e) => {
@@ -384,7 +395,7 @@ const ProductList = () => {
                     <img
                       src={imagePreview || selectedProduct.image}
                       alt="Product"
-                      className="w-48 h-48 object-cover rounded-lg shadow-md border"
+                      className="w-24 h-24 object-fill rounded-lg shadow-md border"
                     />
                   ) : (
                     <div className="w-48 h-48 bg-gray-100 flex items-center justify-center rounded-lg border border-gray-300">
