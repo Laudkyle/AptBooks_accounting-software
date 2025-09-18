@@ -27,7 +27,6 @@ const Draft = ({ companyName, companyAddress, email, phone }) => {
   const [showInvoicePrint, setShowInvoicePrint] = useState(false);
   const [taxRates, setTaxRates] = useState([]);
     const [loading, setLoading] = useState(false);
-
   const { cart, setCart, clearCart, processSale } = useCart();
 
   // Fetch drafts from the backend
