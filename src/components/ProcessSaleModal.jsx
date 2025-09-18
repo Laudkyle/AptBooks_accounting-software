@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import API from "../api.js";
-import { useCart } from "../CartContext.js";
+import { useCart } from "../CartContext.jsx";
 import { FaEye, FaTrash } from "react-icons/fa";
 import { toast } from "react-toastify";
 

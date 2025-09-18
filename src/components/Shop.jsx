@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import ProductCard from "./ProductCard";
 import { FiSearch } from "react-icons/fi";
 import { FaShoppingCart, FaTrash } from "react-icons/fa";
-import { useCart } from "../CartContext.js";
+import { useCart } from "../CartContext";
 import API from "../api.js";
 import { toast } from "react-toastify";
 import { jsPDF } from "jspdf";
