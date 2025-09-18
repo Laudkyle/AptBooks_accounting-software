@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import API from "../api.js";
-import { toast, ToastContainer } from "react-toastify"; // Ensure react-toastify is installed
+import { toast, ToastContainer } from "react-toastify"; 
 
 const CustomerPayment = () => {
   const [paymentData, setPaymentData] = useState({
