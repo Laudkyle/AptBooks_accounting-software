@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+*{
+    border: 0;
+}
 .App {
   text-align: center;
 }
@@ -50,6 +53,7 @@ body {
   body {
     margin: 0;
     padding: 0;
+
   }
 
   /* Prevent printing of the URL, date, and other header/footer content */
